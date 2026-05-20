@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 Canvas じゃんけんゲーム - 学習パネル付き</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+        header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 0 20px;
+            gap: 20px;
+        }
+        .game-section {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 4 / 3;
+            background-color: #fafbfc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 15px;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-gu { background-color: #e74c3c; }
+        .btn-gu:hover { background-color: #c0392b; transform: translateY(-2px); }
+        .btn-choki { background-color: #3498db; }
+        .btn-choki:hover { background-color: #2980b9; transform: translateY(-2px); }
+        .btn-pa { background-color: #2ecc71; }
+        .btn-pa:hover { background-color: #27ae60; transform: translateY(-2px); }
+        .btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+        .btn span.hint {
+            font-size: 11px;
+            font-weight: normal;
+            opacity: 0.8;
+        }
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 500px;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #edf2f7;
+            text-align: center;
+        }
+        .score-item {
+            flex: 1;
+        }
+        .score-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+        .score-val {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .explanation-section {
+            flex: 0.8;
+            background-color: #1e1e24;
+            color: #f8f8f2;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-title {
+            margin-top: 0;
+            font-size: 16px;
+            color: #a78bfa;
+            border-bottom: 1px solid #3b3b4f;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .code-block {
+            background-color: #0f172a;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+        .line {
+            display: block;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background-color 0.3s;
+        }
+        .highlight {
+            background-color: rgba(139, 92, 246, 0.3) !important;
+            border-left: 3px solid #8b5cf6;
+            padding-left: 1px;
+        }
+        .comment { color: #6272a4; }
+        .keyword { color: #ff79c6; }
+        .string { color: #f1fa8c; }
+        .number { color: #bd93f9; }
+        .def { color: #50fa7b; }
+        .live-desc {
+            background-color: #2d2d39;
+            border-left: 4px solid #34d399;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .live-desc strong {
+            color: #34d399;
+        }
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                padding: 0 10px;
+            }
+            .game-section, .explanation-section {
+                flex: none;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>HTML5 Canvas じゃんけんバトル</h1>
+        <p>JavaScriptのリアルタイムコード解説パネル付き (プログラミング学習用)</p>
+    </header>
+
+    <div class="main-container">
+        <!-- ゲーム描画セクション -->
+        <div class="game-section">
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="500" height="375"></canvas>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-gu" onclick="playGame('gu')">
+                    <span>✊ グー</span>
+                    <span class="hint">キーボード: 1</span>
+                </button>
+                <button class="btn btn-choki" onclick="playGame('choki')">
+                    <span>✌️ チョキ</span>
+                    <span class="hint">キーボード: 2</span>
+                </button>
+                <button class="btn btn-pa" onclick="playGame('pa')">
+                    <span>🖐️ パー</span>
+                    <span class="hint">キーボード: 3</span>
+                </button>
+            </div>
+
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="score-label">あなた</div>
+                    <div class="score-val" id="playerScore">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">あいこ</div>
+                    <div class="score-val" id="drawScore">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">相手 (CPU)</div>
+                    <div class="score-val" id="cpuScore">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- リアルタイムコード解説セクション -->
+        <div class="explanation-section">
+            <h2 class="panel-title">💡 リアルタイム・コード解説</h2>
+            <div class="code-block" id="codeDisplay">
+                <span class="line id-init"><span class="comment">// 1. ボタンが押されるとゲーム開始</span></span>
+                <span class="line id-init"><span class="keyword">function</span> <span class="def">playGame</span>(playerHand) {</span>
+                <span class="line id-rand"><span class="comment">  // 2. CPUの手を乱数(0〜2)で決定する</span></span>
+                <span class="line id-rand">  <span class="keyword">const</span> r = Math.floor(Math.random() * <span class="number">3</span>);</span>
+                <span class="line id-rand">  <span class="keyword">const</span> choices = [<span class="string">'gu'</span>, <span class="string">'choki'</span>, <span class="string">'pa'</span>];</span>
+                <span class="line id-rand">  <span class="keyword">const</span> cpuHand = choices[r];</span>
+                <span class="line id-judge"><span class="comment">  // 3. 勝敗の判定ルール</span></span>
+                <span class="line id-judge">  <span class="keyword">if</span> (playerHand === cpuHand) { result = <span class="string">'draw'</span>; }</span>
+                <span class="line id-judge">  <span class="keyword">else if</span> (</span>
+                <span class="line id-judge">    (playerHand === <span class="string">'gu'</span> && cpuHand === <span class="string">'choki'</span>) ||</span>
+                <span class="line id-judge">    (playerHand === <span class="string">'choki'</span> && cpuHand === <span class="string">'pa'</span>) ||</span>
+                <span class="line id-judge">    (playerHand === <span class="string">'pa'</span> && cpuHand === <span class="string">'gu'</span>)</span>
+                <span class="line id-judge">  ) { result = <span class="string">'win'</span>; }</span>
+                <span class="line id-judge">  <span class="keyword">else</span> { result = <span class="string">'lose'</span>; }</span>
+                <span class="line id-draw"><span class="comment">  // 4. 結果をCanvas画面とエフェクトに反映</span></span>
+                <span class="line id-draw">  startAnimation(playerHand, cpuHand, result);</span>
+                <span class="line id-draw">}</span>
+            </div>
+            <div class="live-desc" id="liveDescription">
+                手元のボタンを押すか、キーボードの[1], [2], [3]を押してじゃんけんを開始してください。プログラムの動きがここにリアルタイム表示されます！
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let scores = { win: 0, draw: 0, lose: 0 };
+        let gameState = 'waiting';
+        let pHandState = 'gu';
+        let cHandState = 'gu';
+        let matchResult = '';
+        let shakeTimer = 0;
+        let particles = [];
+
+        const images = {};
+        let loadedImages = 0;
+        const hands = {
+            gu: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48Y2lyY2xlIGN4PSc1MCcgY3k9JzUwJyByPSc0NScgZmlsbD0nI2U3NGMzYycvPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzM1JyBmaWxsPScjZmZmJy8+PHRleHQgeD0nNTAnIHk9JzYyJyBmb250LXNpemU9JzQwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7inIo8L3RleHQ+PC9zdmc+',
+            choki: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48Y2lyY2xlIGN4PSc1MCcgY3k9JzUwJyByPSc0NScgZmlsbD0nIzM0OThkYicvPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzM1JyBmaWxsPScjZmZmJy8+PHRleHQgeD0nNTAnIHk9JzYyJyBmb250LXNpemU9JzQwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7inIzvuI88L3RleHQ+PC9zdmc+',
+            pa: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48Y2lyY2xlIGN4PSc1MCcgY3k9JzUwJyByPSc0NScgZmlsbD0nIzJlY2M3MScvPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzM1JyBmaWxsPScjZmZmJy8+PHRleHQgeD0nNTAnIHk9JzYyJyBmb250LXNpemU9JzQwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7wn5aQ77iPPC90ZXh0Pjwvc3ZnPg=='
+        };
+
+        for (let key in hands) {
+            images[key] = new Image();
+            images[key].src = hands[key];
+            images[key].onload = () => {
+                loadedImages++;
+                if (loadedImages === 3) {
+                    draw();
+                }
+            };
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 6 + 4;
+                this.speedX = Math.random() * 8 - 4;
+                this.speedY = Math.random() * -6 - 4;
+                this.gravity = 0.2;
+                this.color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+                this.angle = Math.random() * Math.PI * 2;
+                this.spin = Math.random() * 0.2 - 0.1;
+            }
+            update() {
+                this.speedY += this.gravity;
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.angle += this.spin;
+            }
+            draw(context) {
+                context.save();
+                context.translate(this.x, this.y);
+                context.rotate(this.angle);
+                context.fillStyle = this.color;
+                context.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                context.restore();
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.textAlign = 'center';
+            ctx.fillText('あなた (YOU)', canvas.width * 0.25, 30);
+            ctx.fillText('コンピュータ (CPU)', canvas.width * 0.75, 30);
+
+            let pYOffset = 0;
+            let cYOffset = 0;
+            if (gameState === 'shaking') {
+                pYOffset = Math.sin(shakeTimer * 0.3) * 15;
+                cYOffset = Math.sin(shakeTimer * 0.3) * 15;
+                shakeTimer++;
+            }
+
+            const pX = canvas.width * 0.25 - 50;
+            const cX = canvas.width * 0.75 - 50;
+            const baseY = canvas.height / 2 - 50;
+
+            if (images[pHandState]) {
+                ctx.drawImage(images[pHandState], pX, baseY + pYOffset, 100, 100);
+            }
+            if (images[cHandState]) {
+                ctx.save();
+                ctx.translate(cX + 50, baseY + 50 + cYOffset);
+                ctx.scale(-1, 1);
+                ctx.drawImage(images[cHandState], -50, -50, 100, 100);
+                ctx.restore();
+            }
+
+            if (gameState === 'result') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 80);
+
+                ctx.font = 'bold 32px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                if (matchResult === 'win') {
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillText('🎉 あなたの勝ち！', canvas.width / 2, canvas.height / 2);
+                } else if (matchResult === 'lose') {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillText(' 💀 負けちゃった...', canvas.width / 2, canvas.height / 2);
+                } else {
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.fillText('🤝 あいこ！', canvas.width / 2, canvas.height / 2);
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    particles[i].update();
+                    particles[i].draw(ctx);
+                    if (particles[i].y > canvas.height) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        function playGame(playerHand) {
+            if (gameState === 'shaking') return;
+
+            gameState = 'shaking';
+            shakeTimer = 0;
+            particles = [];
+            
+            pHandState = 'gu';
+            cHandState = 'gu';
+
+            updateExplanationPanel('init', playerHand, null, null);
+
+            setTimeout(() => {
+                const r = Math.floor(Math.random() * 3);
+                const choices = ['gu', 'choki', 'pa'];
+                const cpuHand = choices[r];
+
+                pHandState = playerHand;
+                cHandState = cpuHand;
+                gameState = 'result';
+
+                if (playerHand === cpuHand) {
+                    matchResult = 'draw';
+                } else if (
+                    (playerHand === 'gu' && cpuHand === 'choki') ||
+                    (playerHand === 'choki' && cpuHand === 'pa') ||
+                    (playerHand === 'pa' && cpuHand === 'gu')
+                ) {
+                    matchResult = 'win';
+                    for (let i = 0; i < 40; i++) {
+                        particles.push(new Particle(canvas.width * 0.25, canvas.height / 2));
+                    }
+                } else {
+                    matchResult = 'lose';
+                }
+
+                scores[matchResult]++;
+                document.getElementById('playerScore').innerText = scores.win;
+                document.getElementById('drawScore').innerText = scores.draw;
+                document.getElementById('cpuScore').innerText = scores.lose;
+
+                updateExplanationPanel('result-phase', playerHand, cpuHand, matchResult);
+
+            }, 600);
+        }
+
+        function updateExplanationPanel(phase, pHand, cHand, result) {
+            const choices = ['gu', 'choki', 'pa'];
+            const handJP = { gu: '✊グー', choki: '✌️チョキ', pa: '🖐️パー' };
+            
+            const lines = document.querySelectorAll('.line');
+            lines.forEach(l => l.classList.remove('highlight'));
+
+            const descBox = document.getElementById('liveDescription');
+
+            if (phase === 'init') {
+                document.querySelectorAll('.id-init').forEach(l => l.classList.add('highlight'));
+                descBox.innerHTML = `ユーザーが <strong>${handJP[pHand]}</strong> ボタンをクリックしました！<br><code>playGame('${pHand}')</code> が呼び出され、ゲーム処理が動き出しました。`;
+                
+                setTimeout(() => {
+                    if (gameState === 'shaking') {
+                        document.querySelectorAll('.id-init').forEach(l => l.classList.remove('highlight'));
+                        document.querySelectorAll('.id-rand').forEach(l => l.classList.add('highlight'));
+                        descBox.innerHTML = `現在、プログラムの内部で <code>Math.random()</code> を使って、コンピュータの手を決定しようとしています...`;
+                    }
+                }, 300);
+
+            } else if (phase === 'result-phase') {
+                document.querySelectorAll('.id-judge, .id-draw').forEach(l => l.classList.add('highlight'));
+
+                let resultText = '';
+                if (result === 'win') resultText = '<strong style="color:#f59e0b;">あなたの勝ち！</strong>';
+                if (result === 'lose') resultText = '<strong style="color:#ef4444;">あなたの負け...</strong>';
+                if (result === 'draw') resultText = '<strong style="color:#38bdf8;">あいこ（引き分け）</strong>';
+
+                descBox.innerHTML = `
+                    <strong>【処理結果】</strong><br>
+                    ・あなたの手: <code>'${pHand}'</code> (${handJP[pHand]})<br>
+                    ・CPUの乱数結果: <code>choices[${choices.indexOf(cHand)}]</code> → <code>'${cHand}'</code> (${handJP[cHand]})<br>
+                    <br>
+                    条件分岐 (<code>if / else if</code>) を計算した結果、${resultText} に決定しました！Canvasに結果を描画します。
+                `;
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '1') playGame('gu');
+            if (e.key === '2') playGame('choki');
+            if (e.key === '3') playGame('pa');
+        });
+
+        draw();
+    </script>
+</body>
+</html>
